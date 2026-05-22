@@ -1,0 +1,127 @@
+---
+title: "MCP Server"
+description: "Connect Claude, Cursor, ChatGPT, and other AI assistants to LogoKit's company database over the Model Context Protocol."
+---
+
+<Info>
+  The LogoKit MCP server is available on **Startup, Scale, and Enterprise**
+  plans. It uses the same secret API key as the Brand Data API — [upgrade
+  here](https://logokit.com/pricing) if you are on the free plan.
+</Info>
+
+## What it is
+
+LogoKit MCP is a hosted [Model Context Protocol](https://modelcontextprotocol.io) server that exposes LogoKit's brand database to AI assistants. Your agent can look up any company by domain or by financial identifier (ticker, ISIN, CUSIP, SEDOL, WKN) and receive structured Brand Data — logo URL, brand colors, social profiles, headquarters, founding year, employee range, and GICS classification.
+
+- **Endpoint:** `https://mcp.logokit.com/mcp`
+- **Transport:** Streamable HTTP (JSON-RPC 2.0)
+- **Protocol version:** `2024-11-05`
+- **Authentication:** Bearer secret key (`sk_pa_…` or `sk_en_…`)
+
+## Authentication
+
+Pass your secret API key in the `Authorization` header:
+
+```http
+Authorization: Bearer sk_pa_YOUR_KEY
+```
+
+Only secret keys are accepted — publishable keys (`pk_*`) are rejected because MCP traffic is run by your agent, not an end-user's browser. Find your secret key in the [API Tokens dashboard](https://logokit.com/account/api-tokens).
+
+## Tools
+
+The MCP server exposes two tools. Both return the same Brand Data record.
+
+### `get_brand_by_domain`
+
+Look up a brand by its canonical website domain. Subdomains and `www.` prefixes are normalized automatically.
+
+| Argument | Type   | Required | Description                                 |
+| -------- | ------ | -------- | ------------------------------------------- |
+| `domain` | string | yes      | Website domain — e.g. `stripe.com`, `apple.com` |
+
+```json Example call
+{
+  "name": "get_brand_by_domain",
+  "arguments": { "domain": "stripe.com" }
+}
+```
+
+### `get_brand_by_ticker`
+
+Look up a brand by a financial security identifier. Accepts stock tickers, ISIN, CUSIP, SEDOL, and WKN — case-insensitive.
+
+| Argument | Type   | Required | Description                                                 |
+| -------- | ------ | -------- | ----------------------------------------------------------- |
+| `symbol` | string | yes      | Ticker (`AAPL`), ISIN (`US0378331005`), CUSIP (`037833100`), SEDOL (`2046251`), or WKN (`865985`) |
+
+```json Example call
+{
+  "name": "get_brand_by_ticker",
+  "arguments": { "symbol": "NVDA" }
+}
+```
+
+## Response shape
+
+A successful tool call returns the Brand Data record as both pretty-printed text content and structured content:
+
+```json
+{
+  "name": "Apple",
+  "domain": "apple.com",
+  "long_name": "Apple Inc.",
+  "website": "https://www.apple.com",
+  "logo": "https://img.logokit.com/apple.com",
+  "colors": ["#000000", "#f5f5f7", "#ffffff"],
+  "founded_year": 1977,
+  "number_of_employees": "150,000-200,000",
+  "social_media": {
+    "x": "https://x.com/apple",
+    "linkedin": "https://www.linkedin.com/company/apple"
+  },
+  "address": {
+    "address1": "One Apple Park Way",
+    "city": "Cupertino",
+    "state": "CA",
+    "zip": "95014",
+    "country": "US"
+  },
+  "gics_sector": "Information Technology",
+  "gics_industry": "Technology Hardware, Storage & Peripherals"
+}
+```
+
+<Tip>
+  Empty and missing fields are **omitted** from the response. Absence does not
+  imply the brand lacks the attribute — it means LogoKit doesn't have the value
+  populated yet. Your agent should present the returned data as-is and avoid
+  speculating about missing fields.
+</Tip>
+
+## Errors
+
+Errors follow the JSON-RPC 2.0 spec. Common cases:
+
+| Code     | Meaning                                                              |
+| -------- | -------------------------------------------------------------------- |
+| `-32001` | Unauthorized — missing/invalid key, banned, inactive, or quota exceeded |
+| `-32601` | Method not found                                                     |
+| `-32602` | Invalid arguments (unknown tool, missing required arg)               |
+| `-32700` | Parse error — invalid JSON                                           |
+| `-32603` | Internal server error                                                |
+
+When a brand cannot be found, the tool call returns an `isError: true` result with a descriptive message rather than a JSON-RPC error — so the agent can recover gracefully and ask the user for a different identifier.
+
+## Usage and quotas
+
+MCP requests count against your Brand Data API quota. You can monitor your usage in the [developer dashboard](https://logokit.com/account/api-tokens).
+
+Plan limits are 25K and 100K requests/day for Startup and Scale respectively. Token status (`active`, `usage_exceeded`, `banned`) is enforced on every request — see [Rate Limits](/rate-limits) for details.
+
+## Next step
+
+<Card title="Install in your client" icon="plug" href="/mcp/install">
+  Copy-pasteable configs for Claude Desktop, Claude Code, Cursor, VS Code,
+  Codex, Windsurf, ChatGPT, and any other MCP-compatible client.
+</Card>
