@@ -1,0 +1,185 @@
+---
+title: "Install in your client"
+description: "Connect the LogoKit MCP server to Claude Desktop, Claude Code, Cursor, VS Code, Codex, Windsurf, ChatGPT, and any other MCP-compatible client."
+---
+
+<Info>
+  Replace `sk_pa_YOUR_KEY` with your secret API key from the [API Tokens
+  dashboard](https://logokit.com/account/api-tokens). All clients use the same
+  endpoint and Bearer authentication — only the location of the config file
+  changes.
+</Info>
+
+## Universal config
+
+Most clients read MCP servers from a JSON file. The config is the same shape everywhere:
+
+```json
+{
+  "mcpServers": {
+    "logokit": {
+      "url": "https://mcp.logokit.com/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_pa_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+Per-client locations and shortcuts are below.
+
+## Claude Code
+
+Use the `claude mcp add` CLI command:
+
+```bash
+claude mcp add --transport http logokit \
+  https://mcp.logokit.com/mcp \
+  --header "Authorization: Bearer sk_pa_YOUR_KEY"
+```
+
+Add `--scope user` to make the server available across all projects.
+
+## Cursor
+
+<Steps>
+  <Step title="Open MCP settings">
+    Cursor → Settings → MCP, or open the Command Palette and run **"MCP: Add
+    Server"**.
+  </Step>
+  <Step title="Paste the config">
+    Paste the [universal config](#universal-config) into the editor and save.
+  </Step>
+  <Step title="Restart Cursor">
+    Restart Cursor — the `logokit` server appears in the MCP list with two
+    tools available.
+  </Step>
+</Steps>
+
+You can also use a one-click install link from the [LogoKit MCP landing page](https://logokit.com/mcp).
+
+## Claude Desktop
+
+Edit your Claude Desktop config file:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+
+Add the `logokit` entry to the `mcpServers` object (merge with any existing entries), then restart Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "logokit": {
+      "url": "https://mcp.logokit.com/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_pa_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+## VS Code
+
+VS Code supports remote MCP servers via GitHub Copilot Chat (and other MCP-compatible extensions).
+
+<Steps>
+  <Step title="Open the MCP config">
+    Run **"MCP: Add Server"** from the Command Palette, or create a
+    `.vscode/mcp.json` file in your workspace.
+  </Step>
+  <Step title="Paste the config">
+    Use the [universal config](#universal-config).
+  </Step>
+  <Step title="Reload the window">
+    Reload the VS Code window — the `logokit` tools become available to
+    Copilot Chat.
+  </Step>
+</Steps>
+
+## Codex
+
+OpenAI Codex CLI reads MCP servers from `~/.codex/config.toml`. Add a TOML entry:
+
+```toml
+[mcp_servers.logokit]
+url = "https://mcp.logokit.com/mcp"
+
+[mcp_servers.logokit.headers]
+Authorization = "Bearer sk_pa_YOUR_KEY"
+```
+
+Restart any active Codex session for the change to take effect.
+
+## Windsurf
+
+Edit the Windsurf MCP config file (Settings → Cascade → MCP, or `~/.codeium/windsurf/mcp_config.json`), then restart Windsurf:
+
+```json
+{
+  "mcpServers": {
+    "logokit": {
+      "url": "https://mcp.logokit.com/mcp",
+      "headers": {
+        "Authorization": "Bearer sk_pa_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+## ChatGPT
+
+ChatGPT (Pro / Team / Enterprise) supports remote MCP servers via the **Connectors** UI:
+
+<Steps>
+  <Step title="Open Connectors">
+    Settings → Connectors → **Add MCP server**.
+  </Step>
+  <Step title="Enter the endpoint">
+    URL: `https://mcp.logokit.com/mcp`
+  </Step>
+  <Step title="Add the header">
+    Header name: `Authorization` · Value: `Bearer sk_pa_YOUR_KEY`
+  </Step>
+</Steps>
+
+## Other clients
+
+LogoKit MCP works with any client that supports remote MCP over HTTP — including Continue, Cline, Zed, and others. Use the [universal config](#universal-config) and consult your client's documentation for where the MCP config file lives.
+
+## Verify the connection
+
+Once installed, the server registers two tools:
+
+- `get_brand_by_domain(domain)`
+- `get_brand_by_ticker(symbol)`
+
+Try a quick prompt like *"Pull stripe.com using LogoKit"* or *"What company is ticker NVDA?"* — your assistant should call the relevant tool and return structured Brand Data.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Unauthorized / 401 error">
+    The MCP server only accepts **secret** API keys (`sk_pa_…` or `sk_en_…`).
+    Publishable keys (`pk_*`) are rejected. Generate a secret key in the
+    [API Tokens dashboard](https://logokit.com/account/api-tokens).
+  </Accordion>
+  <Accordion title="Daily request limit reached">
+    MCP calls share the daily quota of your Brand Data API plan. Limits reset
+    at midnight UTC. [Upgrade your plan](https://logokit.com/pricing) for a
+    higher quota.
+  </Accordion>
+  <Accordion title="Tools don't appear after install">
+    Most clients require a full restart (not just a reload) after adding an MCP
+    server. If the tools still don't show, check the client's MCP log — most
+    clients surface connection errors there.
+  </Accordion>
+  <Accordion title="`No brand found` error">
+    Brand coverage is constantly expanding. If a specific brand is missing,
+    [report it from your dashboard](https://logokit.com/account) and we'll
+    prioritize it.
+  </Accordion>
+</AccordionGroup>

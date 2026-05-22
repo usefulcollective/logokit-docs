@@ -34,6 +34,10 @@
         ]
       },
       {
+        "group": "MCP Server",
+        "pages": ["mcp/overview", "mcp/install"]
+      },
+      {
         "group": "Usage & Limits",
         "pages": ["rate-limits", "free-vs-paid-plans", "attribution"]
       },
